@@ -93,8 +93,8 @@ public class RKRGSTAlgorithm implements IAlgorithm {
                 if (noNextTile)
                     t = T.size();
                 else {
-                    if(jumpToNextUnmarkedTokenAfterTile(t, T) instanceof Integer)
-                        t = (int)jumpToNextUnmarkedTokenAfterTile(t, T);
+                    if(jumpToNextUnmarkedTokenAfterTile(t, T).isPresent())
+                        t = (int)jumpToNextUnmarkedTokenAfterTile(t, T).get();
                     else
                         t = T.size();
                 }
@@ -145,8 +145,8 @@ public class RKRGSTAlgorithm implements IAlgorithm {
                     p = P.size();
                 else {
 
-                    if(jumpToNextUnmarkedTokenAfterTile(p, P) instanceof Integer)
-                        p = (int)jumpToNextUnmarkedTokenAfterTile(p, P);
+                    if(jumpToNextUnmarkedTokenAfterTile(p, P).isPresent())
+                        p = jumpToNextUnmarkedTokenAfterTile(p, P).get();
                     else{
                         p = 0;
                         p = P.size();
@@ -276,17 +276,22 @@ public class RKRGSTAlgorithm implements IAlgorithm {
         return current_position + distance_to_next_tile + 1 != tokens.size() ? Optional.of(distance_to_next_tile + 1) : Optional.empty(); // ????????
     }
 
-    private Object jumpToNextUnmarkedTokenAfterTile(int pos, List<String> stringList) {
-        Optional<Integer> dist = distanceToNextTile(pos, stringList);
-        if(dist.isPresent())
-            pos = pos+ dist.get();
-        else
-            return null;
-        while (pos+1<stringList.size() && (isMarked(stringList.get(pos+1))))
-            pos = pos+1;
-        if (pos+1> stringList.size() - 1)
-            return null;
-        return pos+1;
+    private Optional<Integer> jumpToNextUnmarkedTokenAfterTile(Integer current_position, List<String> tokens) {
+
+        Optional<Integer> position_after_next_tile = Optional.empty();
+
+        Optional<Integer> distance_to_next_tile = distanceToNextTile(current_position, tokens);
+
+        if (distance_to_next_tile.isPresent()) {
+
+            Integer count_marked_tokens = (int) StreamUtils.takeWhile(tokens.stream().skip(current_position + distance_to_next_tile.get() + 1), this::isMarked).count();
+
+            if (current_position + distance_to_next_tile.get() + count_marked_tokens + 1 <= tokens.size() - 1) {
+                position_after_next_tile = Optional.of(current_position + distance_to_next_tile.get() + count_marked_tokens + 1);
+            }
+        }
+
+        return position_after_next_tile;
     }
 
 
