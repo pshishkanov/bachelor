@@ -1,11 +1,9 @@
 package org.pshishkanov.sherlock.core.process.algorithm.rkrgst;
 
-import com.codepoetics.protonpack.StreamUtils;
 import org.pshishkanov.sherlock.core.process.IAlgorithm;
 import org.pshishkanov.sherlock.core.process.algorithm.rkrgst.model.*;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -34,65 +32,31 @@ public class RKRGSTAlgorithm implements IAlgorithm {
     @Override
     public Float process(List<String> p, List<String> t) {
 
-        Integer minimalMatchingLength = 2;
-        Integer initsearchSize = 20;
+            Integer search_length = INITIAL_SEARCH_LENGTH;
 
-            if (minimalMatchingLength < 1)
-                minimalMatchingLength = 3;
-
-            if (initsearchSize < 5)
-                initsearchSize = 20;
-
-            int s = 0;
-
-            s = initsearchSize;
             boolean stop = false;
 
             while (!stop) {
-                //logger.info(Integer.toString(s));
-                // Lmax is size of largest maximal-matches from this scan
-                int Lmax = scanpattern(s, p, t);
-                //logger.info(tiles.toString());
-                // if very long string no tiles marked. Iterate with larger s
-                if (Lmax > 2 * s)
-                    s = Lmax;
+
+                Integer L_max = scanPattern(search_length, p, t);
+
+                if (L_max > 2 * search_length)
+                    search_length = L_max;
                 else {
                     markStrings(p, t);
-                    if (s > (2 * minimalMatchingLength))
-                        s = s/2;
-                    else if (s > minimalMatchingLength)
-                        s = minimalMatchingLength;
+                    if (search_length > 2 * MINIMUM_MATCH_LENGTH)
+                        search_length = search_length / 2;
+                    else if (search_length > MINIMUM_MATCH_LENGTH)
+                        search_length = MINIMUM_MATCH_LENGTH;
                     else
                         stop = true;
                 }
             }
 
-        return similarity(p,t,tiles);
-
-
-//        Integer search_length = INITIAL_SEARCH_LENGTH;
-//
-//        boolean stop = false;
-//
-//        while (!stop) {
-//            int L_max = scanpattern(search_length, p, t);
-//            if (L_max > 2 * search_length)
-//                search_length = L_max;
-//            else {
-//                markStrings( p, t);
-//                if (search_length > (2 * MINIMUM_MATCH_LENGTH))
-//                    search_length = search_length / 2;
-//                else if (search_length > MINIMUM_MATCH_LENGTH)
-//                    search_length = MINIMUM_MATCH_LENGTH;
-//                else
-//                    stop = true;
-//            }
-//        }
-//
-//        return similarity(p, t, tiles);
+        return similarity(p, t, tiles);
     }
 
-    public static int scanpattern(int s, List<String> P, List<String> T) {
+    public static int scanPattern(int s, List<String> P, List<String> T) {
 
         int longestMaxMatch = 0;
         Queue<MatchValue> queue = new LinkedList<MatchValue>();
@@ -344,7 +308,7 @@ public class RKRGSTAlgorithm implements IAlgorithm {
     }
 
 
-//    private Integer scanpattern(Integer search_length, List<String> p, List<String> t) {
+//    private Integer scanPattern(Integer search_length, List<String> p, List<String> t) {
 //
 //        Integer longest_max_match = 0;
 //        Queue<MatchValue> matches = new LinkedList<>();
