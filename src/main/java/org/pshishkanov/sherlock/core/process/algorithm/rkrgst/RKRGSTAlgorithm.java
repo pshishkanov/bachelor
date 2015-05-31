@@ -247,10 +247,7 @@ public class RKRGSTAlgorithm implements IAlgorithm {
     }
 
     private String markToken(String string) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("*");
-        sb.append(string);
-        return sb.toString();
+        return "*" + string;
     }
 
     private Boolean isOccluded(MatchValue match_value, ArrayList<MatchValue> tiles) {
