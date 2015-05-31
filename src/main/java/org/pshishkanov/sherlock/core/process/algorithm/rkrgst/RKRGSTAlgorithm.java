@@ -229,20 +229,11 @@ public class RKRGSTAlgorithm implements IAlgorithm {
         return hashValue;
     }
 
-    /**
-     * If string s is unmarked returns True otherwise False.
-     *
-     * @param string
-     * @return true or false (i.e., whether marked or unmarked)
-     */
-    private boolean isUnmarked(String string) {
-        if (string.length() > 0 && string.charAt(0) != '*')
-            return true;
-        else
-            return false;
+    private Boolean isUnmarked(String string) {
+        return string.length() > 0 && string.charAt(0) != '*';
     }
 
-    private boolean isMarked(String string) {
+    private Boolean isMarked(String string) {
         return (!isUnmarked(string));
     }
 
