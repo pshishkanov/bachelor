@@ -1,13 +1,14 @@
 package org.pshishkanov.sherlock.web.api;
 
-import org.pshishkanov.sherlock.web.response.Response;
+import org.pshishkanov.sherlock.web.response.ApiResponse;
 import org.pshishkanov.sherlock.web.security.model.Account;
+import org.pshishkanov.sherlock.web.security.model.AccountValidator;
 import org.pshishkanov.sherlock.web.security.service.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
 
 /**
  * Created by pshishkanov on 14/05/15.
@@ -25,11 +26,16 @@ public class UserController {
     }
 
     @RequestMapping(method = RequestMethod.POST, value = "/user/create")
-    public Response createUser(@RequestBody Account account) {
+    public ApiResponse createUser(@Valid @RequestBody Account account) {
         if (accountService.create(account).isPresent()) {
-            return new Response("OK", "/sherlock/api/user/create");
+            return new ApiResponse("OK");
         } else {
-            return new Response("ERROR", "/sherlock/api/user/create");
+            return new ApiResponse("ERROR");
         }
+    }
+
+    @InitBinder
+    protected void initBinder(WebDataBinder binder) {
+        binder.setValidator(new AccountValidator());
     }
 }

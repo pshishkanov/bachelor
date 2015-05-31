@@ -1,14 +1,18 @@
 package org.pshishkanov.sherlock.core.process;
 
+import org.pshishkanov.sherlock.core.model.AtomicFloat;
 import org.pshishkanov.sherlock.core.model.SourceCode;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
+import org.pshishkanov.sherlock.core.process.algorithm.rkrgst.RKRGSTAlgorithm;
+import org.pshishkanov.sherlock.core.process.algorithm.winnowing.WinnowingAlgorithm;
+import org.pshishkanov.sherlock.core.process.language.java.JavaPrepocessing;
+import org.pshishkanov.sherlock.core.process.language.java.JavaTokenization;
+import org.pshishkanov.sherlock.core.repository.SourceCodeRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -16,52 +20,92 @@ import java.util.logging.Logger;
  */
 
 @Service
+@EnableAsync
 public class SimilarityService {
 
     private static Logger log = Logger.getLogger(SimilarityService.class.getName());
 
-    public Optional<Float> syncProcess(SourceCode sourceCode) {
-        log.info("syncProcess start");
-        String uuid = UUID.randomUUID().toString();
-        sourceCode.setId(uuid);
-        log.info("syncProcess end");
-        return Optional.ofNullable(process(sourceCode).getPlagiarismProbability().get("TOTAL"));
+    @Autowired
+    SourceCodeRepository sourceCodeRepository;
+
+    private Map<String, IAlgorithm> algorithms;
+
+    private Float total_weight = 0f;
+
+    {
+        IAlgorithm algorithm;
+        algorithms = new HashMap<>();
+        algorithm = new RKRGSTAlgorithm();
+        total_weight += algorithm.getWeight();
+        algorithms.put(algorithm.getName(), algorithm);
+        algorithm = new WinnowingAlgorithm();
+        total_weight += algorithm.getWeight();
+        algorithms.put(algorithm.getName(), algorithm);
     }
 
-    public String asyncProcess(SourceCode sourceCode) {
-        log.info("asyncProcess start");
-        String uuid = UUID.randomUUID().toString();
-        sourceCode.setId(uuid);
-        async(sourceCode);
-        log.info("asyncProcess end");
-        return uuid;
+    public Optional<Float> syncProcess(SourceCode sourceCode) {
+        sourceCode.setId(UUID.randomUUID().toString());
+        return Optional.ofNullable(Float.valueOf(process(sourceCode).get().getPlagiarismProbability()));
     }
 
     @Async
-    public void async(SourceCode sourceCode) {
-        for (int i = 1; i <= 10; i++ ) {
-            try {
-                Thread.sleep(2000);
-            } catch (Exception e) {
-
-            }
-            log.info("process do ...");
-
-        }
-        //process(sourceCode);
+    public void asyncProcess(SourceCode sourceCode, String uuid) {
+        sourceCode.setId(uuid);
+        process(sourceCode);
     }
 
-    private SourceCode process(SourceCode sourceCode) {
-        /* TODO Реализовать общую логику */
-        for (int i = 1; i <= 10; i++ ) {
-            try {
-                Thread.sleep(2000);
-            } catch (Exception e) {
+    private Optional<SourceCode> process(SourceCode incoming_source_code) {
 
-            }
-            log.info("process do ...");
+        ITokenization tokenization;
+        IPreprocessing preprocessing;
 
+        switch (incoming_source_code.getLanguage()) {
+            case "java" :
+                tokenization = new JavaTokenization();
+                preprocessing = new JavaPrepocessing();
+                break;
+//          case "python" :
+//              ...
+//              break;
+            default:
+                return Optional.empty();
         }
-        return new SourceCode();
+
+        incoming_source_code.setSourceText(preprocessing.process(incoming_source_code.getSourceText()));
+
+        Optional<List<String>> tokens = tokenization.process(incoming_source_code.getSourceText());
+
+        if (tokens.isPresent()) {
+            incoming_source_code.setTokens(tokens.get());
+        } else {
+            return Optional.empty();
+        }
+
+        AtomicFloat max_plagiarism_probability = new AtomicFloat();
+
+        List<SourceCode> all_source_code_by_language = sourceCodeRepository.findByLanguage(incoming_source_code.getLanguage());
+        all_source_code_by_language.forEach(source_code_from_db -> {
+            Float current_max_plagiarism_probability = max_plagiarism_probability.floatValue();
+            Float current_plagiarism_probability = calculate(source_code_from_db.getTokens(), incoming_source_code.getTokens());
+            max_plagiarism_probability.set(Float.max(current_max_plagiarism_probability, current_plagiarism_probability));
+        });
+
+        incoming_source_code.setPlagiarismProbability(Float.toString(max_plagiarism_probability.get()));
+
+        sourceCodeRepository.save(incoming_source_code);
+
+        return Optional.of(incoming_source_code);
+    }
+
+    private Float calculate(List<String> p, List<String> t) {
+        Map<String, Float> plagiarism_probability = new HashMap<>();
+        algorithms.forEach((algorithm_name, algorithm) -> plagiarism_probability.put(algorithm_name, algorithm.process(p, t)));
+
+        AtomicFloat result_probability = new AtomicFloat();
+
+        plagiarism_probability.forEach((algorithm_name, algorithm_probability) -> {
+            result_probability.set(result_probability.floatValue() + (algorithms.get(algorithm_name).getWeight() * algorithm_probability) / total_weight);
+        });
+        return result_probability.floatValue();
     }
 }

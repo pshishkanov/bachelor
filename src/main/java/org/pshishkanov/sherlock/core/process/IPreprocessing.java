@@ -7,5 +7,5 @@ import java.util.Optional;
  */
 public interface IPreprocessing {
 
-    Optional<String> process(String sourceText);
+    String process(String sourceText);
 }

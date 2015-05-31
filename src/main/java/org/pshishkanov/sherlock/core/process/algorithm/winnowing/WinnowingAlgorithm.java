@@ -16,6 +16,11 @@ public class WinnowingAlgorithm implements IAlgorithm {
     }
 
     @Override
+    public Float getWeight() {
+        return 0.5f;
+    }
+
+    @Override
     public Float process(List<String> p, List<String> t) {
         /* TODO Реализовать алгоритм */
         return 0f;

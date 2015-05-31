@@ -9,8 +9,8 @@ import java.util.Optional;
  */
 public class JavaPrepocessing implements IPreprocessing {
     @Override
-    public Optional<String> process(String sourceText) {
+    public String process(String sourceText) {
         /* TODO Реализовать предварительную обработку исходных текстов */
-        return Optional.of(sourceText);
+        return sourceText;
     }
 }

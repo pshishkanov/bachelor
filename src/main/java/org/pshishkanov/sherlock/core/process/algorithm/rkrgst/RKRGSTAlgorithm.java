@@ -26,6 +26,11 @@ public class RKRGSTAlgorithm implements IAlgorithm {
     }
 
     @Override
+    public Float getWeight() {
+        return 0.5f;
+    }
+
+    @Override
     public Float process(List<String> p, List<String> t) {
 
             Integer search_length = INITIAL_SEARCH_LENGTH;
@@ -49,7 +54,12 @@ public class RKRGSTAlgorithm implements IAlgorithm {
                 }
             }
 
-        return similarity(p, t, tiles);
+        Float similarity = similarity(p, t, tiles);
+        if (similarity > 1.0f){
+            return 1.0f;
+        } else {
+            return similarity;
+        }
     }
 
     public Integer scanPattern(Integer search_length, List<String> P, List<String> T) {

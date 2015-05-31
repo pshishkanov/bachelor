@@ -11,4 +11,6 @@ public interface IAlgorithm {
 
     String getName();
 
+    Float getWeight();
+
 }

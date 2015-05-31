@@ -1,11 +1,8 @@
 package org.pshishkanov.sherlock.web.api;
 
-import org.pshishkanov.sherlock.core.model.SourceCode;
-import org.pshishkanov.sherlock.web.security.model.Account;
 import org.pshishkanov.sherlock.web.security.service.AccountService;
-import org.pshishkanov.sherlock.web.response.Response;
+import org.pshishkanov.sherlock.web.response.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping(value = "/sherlock/api")
 public class WebController {
 
+
     private AccountService accountService;
 
     @Autowired
@@ -25,13 +23,18 @@ public class WebController {
         this.accountService = accountService;
     }
 
-
-
-
-
     /* =================== Test API ==================== */
     @RequestMapping(method = RequestMethod.GET, value = "/ok")
-    public Response getOK() {
-        return new Response("OK", "/sherlock/api/ok");
+    public ApiResponse getOK() {
+        return new ApiResponse("OK");
+    }
+
+
+    public AccountService getAccountService() {
+        return accountService;
+    }
+
+    public void setAccountService(AccountService accountService) {
+        this.accountService = accountService;
     }
 }

@@ -2,6 +2,7 @@ package org.pshishkanov.sherlock.core.model;
 
 import org.springframework.data.annotation.Id;
 
+import javax.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Map;
 
@@ -11,7 +12,11 @@ public class SourceCode {
     private String id;
 
     /* Исходный тест программы */
+    @NotNull
     private String sourceText;
+
+    @NotNull
+    private String language;
 
     /* Исходный текст программы после разбора ANTLR */
     private List<String> tokens;
@@ -19,11 +24,7 @@ public class SourceCode {
     /* Имя пользователя, приславшего запрос */
     private String username;
 
-    /* Список полученных вероятностей плагиата для каждого из алгоритмов:
-    *   key - название алгоритма,
-    *   value - вероятность плагиата (от 0 до 1)
-    */
-    private Map<String, Float> plagiarismProbability;
+    private String plagiarismProbability;
 
     public String getId() {
         return id;
@@ -39,6 +40,14 @@ public class SourceCode {
 
     public void setSourceText(String sourceText) {
         this.sourceText = sourceText;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(String language) {
+        this.language = language;
     }
 
     public List<String> getTokens() {
@@ -57,11 +66,23 @@ public class SourceCode {
         this.username = username;
     }
 
-    public Map<String, Float> getPlagiarismProbability() {
+    public String getPlagiarismProbability() {
         return plagiarismProbability;
     }
 
-    public void setPlagiarismProbability(Map<String, Float> plagiarismProbability) {
+    public void setPlagiarismProbability(String plagiarismProbability) {
         this.plagiarismProbability = plagiarismProbability;
+    }
+
+    @Override
+    public String toString() {
+        return "SourceCode{" +
+                "sourceText='" + sourceText + '\'' +
+                ", id='" + id + '\'' +
+                ", language='" + language + '\'' +
+                ", tokens=" + tokens +
+                ", username='" + username + '\'' +
+                ", plagiarismProbability=" + plagiarismProbability +
+                '}';
     }
 }
