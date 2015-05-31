@@ -1,6 +1,7 @@
 package org.pshishkanov.sherlock.core.process.algorithm.rkrgst;
 
 import com.codepoetics.protonpack.StreamUtils;
+import org.pshishkanov.sherlock.core.model.Tuple2;
 import org.pshishkanov.sherlock.core.process.IAlgorithm;
 import org.pshishkanov.sherlock.core.process.algorithm.rkrgst.model.*;
 
@@ -8,6 +9,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Created by pshishkanov on 14/05/15.
@@ -16,16 +18,15 @@ public class RKRGSTAlgorithm implements IAlgorithm {
 
     static Logger logger = Logger.getLogger(RKRGSTAlgorithm.class.getName());
 
-    public static ArrayList<MatchValue> tiles = new ArrayList<>();
-
-    public static ArrayList<Queue<MatchValue>> matchList = new ArrayList<Queue<MatchValue>>();
-
     /* Число подряд идущих совпадений, ниже которого совпадения не учитываются */
     private static final Integer MINIMUM_MATCH_LENGTH = 3;
 
     /* Начальное значение для длины максимальной последовательности совпадений */
     private static final Integer INITIAL_SEARCH_LENGTH = 20;
 
+    List<List<MatchValue>> all_matches = new ArrayList<>();
+
+    List<MatchValue> tiles = new ArrayList<>();
     @Override
     public String getName() {
         return "RKR-GST";
@@ -61,7 +62,7 @@ public class RKRGSTAlgorithm implements IAlgorithm {
     public int scanPattern(int s, List<String> P, List<String> T) {
 
         int longestMaxMatch = 0;
-        Queue<MatchValue> queue = new LinkedList<MatchValue>();
+        List<MatchValue> queue = new LinkedList<MatchValue>();
         GSTHashTable hashtable = new GSTHashTable();
         /**
          * Starting at the first unmarked token in T for each unmarked Tt do if
@@ -190,28 +191,27 @@ public class RKRGSTAlgorithm implements IAlgorithm {
                 }
                 p += 1;
             }
-            //logger.info(queue.toString());
+            //logger.info(matches.toString());
         }
         if (!queue.isEmpty()){
-            matchList.add(queue);
+            all_matches.add(queue);
         }
         return longestMaxMatch;
     }
 
-    private void markStrings(List<String> P, List<String> T) {
-        for(Queue<MatchValue> queue:matchList){
-            while (!queue.isEmpty()) {
-                MatchValue match = queue.poll();
-                if (!isOccluded(match, tiles)) {
-                    for (int j = 0; j < match.getLengthMatch(); j++) {
-                        P.set(match.getPatternPosition() + j, markToken(P.get(match.getPatternPosition() + j)));
-                        T.set(match.getTextPosition() + j, markToken(T.get(match.getTextPosition() + j)));
-                    }
-                    tiles.add(match);
-                }
-            }
-        }
-        matchList = new ArrayList<Queue<MatchValue>>();
+    private void markStrings(List<String> p, List<String> t) {
+        all_matches.forEach(matches -> matches.stream().filter(match -> !isOccluded(match, tiles)).forEach(match -> {
+            IntStream.range(0, match.getLengthMatch()).forEach(i -> {
+
+                Integer pattern_position = match.getPatternPosition() + i;
+                Integer text_position = match.getTextPosition() + i;
+
+                p.set(pattern_position, markToken(p.get(pattern_position)));
+                t.set(text_position, markToken(t.get(text_position)));
+            });
+            tiles.add(match);
+        }));
+        all_matches.clear();
     }
 
     private static int hash(String string) {
@@ -232,7 +232,7 @@ public class RKRGSTAlgorithm implements IAlgorithm {
         return "*" + string;
     }
 
-    private Boolean isOccluded(MatchValue match_value, ArrayList<MatchValue> tiles) {
+    private Boolean isOccluded(MatchValue match_value, List<MatchValue> tiles) {
         return tiles.stream().anyMatch(tile -> (tile.getPatternPosition() + tile.getLengthMatch() == match_value.getPatternPosition() + match_value.getLengthMatch()) &&
                                       (tile.getTextPosition() + tile.getLengthMatch() == match_value.getTextPosition() + match_value.getLengthMatch()));
     }
@@ -372,7 +372,7 @@ public class RKRGSTAlgorithm implements IAlgorithm {
 //
 //                p_position += 1;
 //            }
-//            //logger.info(queue.toString());
+//            //logger.info(matches.toString());
 //        }
 //        if (!matches.isEmpty()){
 //            all_match.add(matches);
@@ -506,9 +506,9 @@ public class RKRGSTAlgorithm implements IAlgorithm {
 //    }
 //
 //    private void markStrings(List<String> p, List<String> t) {
-//        for(Queue<MatchValue> queue: all_match){
-//            while (!queue.isEmpty()) {
-//                MatchValue match_value = queue.poll();
+//        for(Queue<MatchValue> matches: all_match){
+//            while (!matches.isEmpty()) {
+//                MatchValue match_value = matches.poll();
 //                if (!isOccluded(match_value, tiles)) {
 //                    for (int j = 0; j < match_value.getLengthMatch(); j++) {
 //                        p.set(match_value.getPatternPosition() + j, markToken(p.get(match_value.getPatternPosition() + j)));
