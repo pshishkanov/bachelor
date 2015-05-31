@@ -1,5 +1,6 @@
 package org.pshishkanov.sherlock.core.process.algorithm.rkrgst;
 
+import com.codepoetics.protonpack.StreamUtils;
 import org.pshishkanov.sherlock.core.process.IAlgorithm;
 import org.pshishkanov.sherlock.core.process.algorithm.rkrgst.model.*;
 
@@ -56,7 +57,7 @@ public class RKRGSTAlgorithm implements IAlgorithm {
         return similarity(p, t, tiles);
     }
 
-    public static int scanPattern(int s, List<String> P, List<String> T) {
+    public int scanPattern(int s, List<String> P, List<String> T) {
 
         int longestMaxMatch = 0;
         Queue<MatchValue> queue = new LinkedList<MatchValue>();
@@ -76,15 +77,16 @@ public class RKRGSTAlgorithm implements IAlgorithm {
                 continue;
             }
 
-            int dist;
-            if(distToNextTile(t, T) instanceof Integer)
-                dist = (int)distToNextTile(t, T);
+            Integer dist;
+            Optional<Integer> distance_to_next_tile = distanceToNextTile(t, T);
+            if (distance_to_next_tile.isPresent())
+                dist = distance_to_next_tile.get();
             else{
                 dist = 0;
                 dist = T.size() - t;
                 noNextTile = true;
             }
-            //int dist = distToNextTile(t, T);
+            //int dist = distanceToNextTile(t, T);
             // No next tile found
 
             if (dist < s) {
@@ -126,11 +128,12 @@ public class RKRGSTAlgorithm implements IAlgorithm {
                 continue;
             }
 
-            int dist;
 
-            if(distToNextTile(p, P) instanceof Integer){
-                dist = (int)distToNextTile(p, P);
-            }
+
+            Integer dist;
+            Optional<Integer> distance_to_next_tile = distanceToNextTile(p, P);
+            if (distance_to_next_tile.isPresent())
+                dist = distance_to_next_tile.get();
             else{
                 dist = 0;
                 dist = P.size() - p;
@@ -194,7 +197,7 @@ public class RKRGSTAlgorithm implements IAlgorithm {
         return longestMaxMatch;
     }
 
-    private static void markStrings(List<String> P, List<String> T) {
+    private void markStrings(List<String> P, List<String> T) {
         for(Queue<MatchValue> queue:matchList){
             while (!queue.isEmpty()) {
                 MatchValue match = queue.poll();
@@ -232,25 +235,25 @@ public class RKRGSTAlgorithm implements IAlgorithm {
      * @param string
      * @return true or false (i.e., whether marked or unmarked)
      */
-    private static boolean isUnmarked(String string) {
+    private boolean isUnmarked(String string) {
         if (string.length() > 0 && string.charAt(0) != '*')
             return true;
         else
             return false;
     }
 
-    private static boolean isMarked(String string) {
+    private boolean isMarked(String string) {
         return (!isUnmarked(string));
     }
 
-    private static String markToken(String string) {
+    private String markToken(String string) {
         StringBuilder sb = new StringBuilder();
         sb.append("*");
         sb.append(string);
         return sb.toString();
     }
 
-    private static boolean isOccluded(MatchValue match, ArrayList<MatchValue> tiles) {
+    private boolean isOccluded(MatchValue match, ArrayList<MatchValue> tiles) {
         if(tiles.equals(null) || tiles == null || tiles.size() == 0)
             return false;
         for (MatchValue matches : tiles) {
@@ -268,36 +271,15 @@ public class RKRGSTAlgorithm implements IAlgorithm {
     }
 
 
-    private static Object distToNextTile(int pos, List<String> stringList) {
-        if (pos == stringList.size())
-            return null;
-        int dist = 0;
-        while (pos+dist+1<stringList.size() && isUnmarked(stringList.get(pos+dist+1)))
-            dist += 1;
-        if (pos+dist+1 == stringList.size())
-            return null;
-        return dist+1;
+    private Optional<Integer> distanceToNextTile(Integer current_position, List<String> tokens) {
+        Integer distance_to_next_tile = (int) StreamUtils.takeWhile(tokens.stream().skip(current_position + 1), this::isUnmarked).count();
+        return current_position + distance_to_next_tile + 1 != tokens.size() ? Optional.of(distance_to_next_tile + 1) : Optional.empty(); // ????????
     }
 
-    /**
-     * Returns the first postion of an unmarked token after the next tile.
-
-     case 1: -> normal case
-     -> tile exists
-     -> there is an unmarked token after the tile
-     case 2:
-     -> tile exists
-     -> but NO unmarked token after the tile
-     case 3:
-     -> NO tile exists
-     * @param pos
-     * @param stringList
-     * @return the position to jump to the next unmarked token after tile
-     */
-    private static Object jumpToNextUnmarkedTokenAfterTile(int pos, List<String> stringList) {
-        Object dist = distToNextTile(pos, stringList);
-        if(dist instanceof Integer)
-            pos = pos+ (int)dist;
+    private Object jumpToNextUnmarkedTokenAfterTile(int pos, List<String> stringList) {
+        Optional<Integer> dist = distanceToNextTile(pos, stringList);
+        if(dist.isPresent())
+            pos = pos+ dist.get();
         else
             return null;
         while (pos+1<stringList.size() && (isMarked(stringList.get(pos+1))))
