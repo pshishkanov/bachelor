@@ -8,22 +8,22 @@ import java.util.HashMap;
  */
 public class GSTHashTable {
 
-    private HashMap<Long, ArrayList<Integer>> matchers = new HashMap<>();
+    private HashMap<Long, ArrayList<Integer>> matches = new HashMap<>();
 
     public void put(long hash, int position){
         ArrayList<Integer> list;
-        if (matchers.containsKey(hash)){
-            list = matchers.get(hash);
+        if (matches.containsKey(hash)){
+            list = matches.get(hash);
         } else {
             list = new ArrayList<>();
         }
         list.add(position);
-        matchers.put(hash, list);
+        matches.put(hash, list);
     }
 
     public ArrayList<Integer> get(long key){
-        if(matchers.containsKey(key))
-            return matchers.get(key);
+        if(matches.containsKey(key))
+            return matches.get(key);
         else
             return null;
     }
