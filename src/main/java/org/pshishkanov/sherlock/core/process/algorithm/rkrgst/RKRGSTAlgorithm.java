@@ -5,6 +5,7 @@ import org.pshishkanov.sherlock.core.process.IAlgorithm;
 import org.pshishkanov.sherlock.core.process.algorithm.rkrgst.model.*;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -65,7 +66,7 @@ public class RKRGSTAlgorithm implements IAlgorithm {
         /**
          * Starting at the first unmarked token in T for each unmarked Tt do if
          * distance to next tile <= s then advance t to first unmarked token
-         * after next tile else create the KR-hash value for substring Tt to
+         * after next tile else create the KR-hash value for string Tt to
          * Tt+s-1 and add to hashtable
          */
         int t = 0;
@@ -104,7 +105,7 @@ public class RKRGSTAlgorithm implements IAlgorithm {
                 for (int i = t; i <= t + s-1; i++)
                     sb.append(T.get(i));
                 String substring = sb.toString();
-                h = createKRHashValue(substring);
+                h = hash(substring);
                 hashtable.put(h, t);
                 t = t+1;
             }
@@ -113,7 +114,7 @@ public class RKRGSTAlgorithm implements IAlgorithm {
         /**
          * Starting at the first unmarked token of P for each unmarked Pp do if
          * distance to next tile <= s then advance p to first unmarked token
-         * after next tile else create the KR hash-value for substring Pp to
+         * after next tile else create the KR hash-value for string Pp to
          * Pp+s-1 check hashtable for hash of KR hash-value for each hash-table
          * entry with equal hashed KR hash-value do if for all j from 0 to s-1,
          * Pp+ j = Tt+ j then k: = s while Pp+k = Tt+k AND unmarked(Pp+k) AND
@@ -158,7 +159,7 @@ public class RKRGSTAlgorithm implements IAlgorithm {
                     sb.append(P.get(i));
                 }
                 String substring = sb.toString();
-                h = createKRHashValue(substring);
+                h = hash(substring);
                 ArrayList<Integer> values = hashtable.get(h);
                 if (values != null) {
                     for (Integer val : values) {
@@ -213,20 +214,10 @@ public class RKRGSTAlgorithm implements IAlgorithm {
         matchList = new ArrayList<Queue<MatchValue>>();
     }
 
-    /**
-     * Creates a Karp-Rabin Hash Value for the given substring and returns it.
-     *
-     * Based on: http://www-igm.univ-mlv.fr/~lecroq/string/node5.html
-     *
-     * @param substring
-     * @return hash value for any given string
-     */
-
-    private static int createKRHashValue(String substring) {
-        int hashValue = 0;
-        for (int i = 0; i < substring.length(); i++)
-            hashValue = ((hashValue << 1) + (int) substring.charAt(i));
-        return hashValue;
+    private static int hash(String string) {
+        AtomicInteger hash = new AtomicInteger(0);
+        string.chars().forEach(symbol -> hash.set((hash.intValue() << 1) + symbol));
+        return hash.intValue();
     }
 
     private Boolean isUnmarked(String string) {
@@ -531,19 +522,19 @@ public class RKRGSTAlgorithm implements IAlgorithm {
 //    }
 //
 //    /**
-//     * Creates a Karp-Rabin Hash Value for the given substring and returns it.
+//     * Creates a Karp-Rabin Hash Value for the given string and returns it.
 //     *
 //     * Based on: http://www-igm.univ-mlv.fr/~lecroq/string/node5.html
 //     *
-//     * @param substring
+//     * @param string
 //     * @return hash value for any given string
 //     */
 //
-//    private static int createKRHashValue(String substring) {
+//    private static int hash(String string) {
 //        int hashValue = 0;
-//        for (int i = 0; i < substring.length(); i++)
-//            hashValue = ((hashValue << 1) + (int) substring.charAt(i));
-//        logger.info(substring + " ============" + hashValue);
+//        for (int i = 0; i < string.length(); i++)
+//            hashValue = ((hashValue << 1) + (int) string.charAt(i));
+//        logger.info(string + " ============" + hashValue);
 //        return hashValue;
 //    }
 //
