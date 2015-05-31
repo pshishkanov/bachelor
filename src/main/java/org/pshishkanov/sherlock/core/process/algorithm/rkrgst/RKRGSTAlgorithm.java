@@ -118,7 +118,7 @@ public class RKRGSTAlgorithm implements IAlgorithm {
          * entry with equal hashed KR hash-value do if for all j from 0 to s-1,
          * Pp+ j = Tt+ j then k: = s while Pp+k = Tt+k AND unmarked(Pp+k) AND
          * unmarked(Tt+k) do k := k + 1 if k > 2 *s then return(k) else record
-         * new maximal-match
+         * new maximal-match_value
          */
         noNextTile = false;
         int p = 0;
@@ -253,21 +253,9 @@ public class RKRGSTAlgorithm implements IAlgorithm {
         return sb.toString();
     }
 
-    private boolean isOccluded(MatchValue match, ArrayList<MatchValue> tiles) {
-        if(tiles.equals(null) || tiles == null || tiles.size() == 0)
-            return false;
-        for (MatchValue matches : tiles) {
-            if ((matches.getPatternPosition() + matches.getLengthMatch() == match.getPatternPosition()
-                    + match.getLengthMatch())
-                    && (matches.getTextPosition() + matches.getLengthMatch() == match.getTextPosition()
-                    + match.getLengthMatch()))
-                return true;
-        }
-        return false;
-
-//        return tiles.stream().anyMatch(tile -> (tile.getPatternPosition() + tile.getLengthMatch() == tile.getPatternPosition() + match_value.getLengthMatch()) &&
-//                (tile.getTextPosition() + tile.getLengthMatch() == match_value.getTextPosition() + match_value.getLengthMatch()));
-//////
+    private Boolean isOccluded(MatchValue match_value, ArrayList<MatchValue> tiles) {
+        return tiles.stream().anyMatch(tile -> (tile.getPatternPosition() + tile.getLengthMatch() == match_value.getPatternPosition() + match_value.getLengthMatch()) &&
+                                      (tile.getTextPosition() + tile.getLengthMatch() == match_value.getTextPosition() + match_value.getLengthMatch()));
     }
 
 
@@ -415,7 +403,7 @@ public class RKRGSTAlgorithm implements IAlgorithm {
 ////        Integer longest_max_match = 0;
 ////
 ////        GSTHashTable hash_table = new GSTHashTable();
-////        Queue<MatchVals> match = new LinkedList<>();
+////        Queue<MatchVals> match_value = new LinkedList<>();
 ////
 ////        Integer t_position = 0;
 ////        Boolean no_next_tile = false;
@@ -524,7 +512,7 @@ public class RKRGSTAlgorithm implements IAlgorithm {
 ////                            return k;
 ////                        } else {
 ////                            longest_max_match = Integer.max(longest_max_match, search_length);
-////                            match.put(new MatchVals(p_position, t_position, k));
+////                            match_value.put(new MatchVals(p_position, t_position, k));
 ////                        }
 ////                    }
 ////                }
@@ -532,8 +520,8 @@ public class RKRGSTAlgorithm implements IAlgorithm {
 ////            }
 ////        }
 ////
-////        if (!match.isEmpty())
-////            all_matches.put(match);
+////        if (!match_value.isEmpty())
+////            all_matches.put(match_value);
 ////
 ////        return longest_max_match;
 //    }
@@ -541,13 +529,13 @@ public class RKRGSTAlgorithm implements IAlgorithm {
 //    private void markStrings(List<String> p, List<String> t) {
 //        for(Queue<MatchValue> queue: all_match){
 //            while (!queue.isEmpty()) {
-//                MatchValue match = queue.poll();
-//                if (!isOccluded(match, tiles)) {
-//                    for (int j = 0; j < match.getLengthMatch(); j++) {
-//                        p.set(match.getPatternPosition() + j, markToken(p.get(match.getPatternPosition() + j)));
-//                        t.set(match.getTextPosition() + j, markToken(t.get(match.getTextPosition() + j)));
+//                MatchValue match_value = queue.poll();
+//                if (!isOccluded(match_value, tiles)) {
+//                    for (int j = 0; j < match_value.getLengthMatch(); j++) {
+//                        p.set(match_value.getPatternPosition() + j, markToken(p.get(match_value.getPatternPosition() + j)));
+//                        t.set(match_value.getTextPosition() + j, markToken(t.get(match_value.getTextPosition() + j)));
 //                    }
-//                    tiles.add(match);
+//                    tiles.add(match_value);
 //                }
 //            }
 //        }
@@ -593,9 +581,9 @@ public class RKRGSTAlgorithm implements IAlgorithm {
 //    }
 //
 //
-//    private boolean isOccluded(MatchValue match, ArrayList<MatchValue> tiles) {
-//        return tiles.stream().anyMatch(tile -> (tile.getPatternPosition() + tile.getLengthMatch() == match.getPatternPosition() + match.getLengthMatch()) &&
-//                                               (tile.getTextPosition() + tile.getLengthMatch() == match.getTextPosition() + match.getLengthMatch()));
+//    private boolean isOccluded(MatchValue match_value, ArrayList<MatchValue> tiles) {
+//        return tiles.stream().anyMatch(tile -> (tile.getPatternPosition() + tile.getLengthMatch() == match_value.getPatternPosition() + match_value.getLengthMatch()) &&
+//                                               (tile.getTextPosition() + tile.getLengthMatch() == match_value.getTextPosition() + match_value.getLengthMatch()));
 //    }
 //
 //    private Optional<Integer> distanceToNextTile(Integer current_position, List<String> list) {
