@@ -1,22 +1,15 @@
 package org.pshishkanov.sherlock.core.process.algorithm.rkrgst;
 
 import com.codepoetics.protonpack.StreamUtils;
-import org.pshishkanov.sherlock.core.model.Tuple2;
 import org.pshishkanov.sherlock.core.process.IAlgorithm;
 import org.pshishkanov.sherlock.core.process.algorithm.rkrgst.model.*;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-/**
- * Created by pshishkanov on 14/05/15.
- */
 public class RKRGSTAlgorithm implements IAlgorithm {
-
-    static Logger logger = Logger.getLogger(RKRGSTAlgorithm.class.getName());
 
     /* Число подряд идущих совпадений, ниже которого совпадения не учитываются */
     private static final Integer MINIMUM_MATCH_LENGTH = 3;
@@ -59,144 +52,117 @@ public class RKRGSTAlgorithm implements IAlgorithm {
         return similarity(p, t, tiles);
     }
 
-    public int scanPattern(int s, List<String> P, List<String> T) {
+    public Integer scanPattern(Integer search_length, List<String> P, List<String> T) {
 
-        int longestMaxMatch = 0;
-        List<MatchValue> queue = new LinkedList<MatchValue>();
-        GSTHashTable hashtable = new GSTHashTable();
-        /**
-         * Starting at the first unmarked token in T for each unmarked Tt do if
-         * distance to next tile <= s then advance t to first unmarked token
-         * after next tile else create the KR-hash value for string Tt to
-         * Tt+s-1 and add to hashtable
-         */
-        int t = 0;
-        boolean noNextTile = false;
-        int h;
-        while (t < T.size()) {
-            if (isMarked(T.get(t))) {
-                t = t+1;
+        Integer longest_max_match = 0;
+
+        List<MatchValue> matches = new ArrayList<>();
+
+        GSTHashTable hash_table = new GSTHashTable();
+
+        Integer t_position = 0;
+
+        Boolean no_next_tile = false;
+
+        Integer distance;
+
+        while (t_position < T.size()) {
+            if (isMarked(T.get(t_position))) {
+                t_position ++;
                 continue;
             }
 
-            Integer dist;
-            Optional<Integer> distance_to_next_tile = distanceToNextTile(t, T);
+            Optional<Integer> distance_to_next_tile = distanceToNextTile(t_position, T);
             if (distance_to_next_tile.isPresent())
-                dist = distance_to_next_tile.get();
-            else{
-                dist = 0;
-                dist = T.size() - t;
-                noNextTile = true;
+                distance = distance_to_next_tile.get();
+            else {
+                distance = T.size() - t_position;
+                no_next_tile = true;
             }
-            //int dist = distanceToNextTile(t, T);
-            // No next tile found
 
-            if (dist < s) {
-                if (noNextTile)
-                    t = T.size();
+            if (distance < search_length) {
+                if (no_next_tile)
+                    t_position = T.size();
                 else {
-                    if(jumpToNextUnmarkedTokenAfterTile(t, T).isPresent())
-                        t = (int)jumpToNextUnmarkedTokenAfterTile(t, T).get();
+                    if (jumpToNextUnmarkedTokenAfterTile(t_position, T).isPresent())
+                        t_position = jumpToNextUnmarkedTokenAfterTile(t_position, T).get();
                     else
-                        t = T.size();
+                        t_position = T.size();
                 }
             } else {
-                StringBuilder sb = new StringBuilder();
-
-                for (int i = t; i <= t + s-1; i++)
-                    sb.append(T.get(i));
-                String substring = sb.toString();
-                h = hash(substring);
-                hashtable.put(h, t);
-                t = t+1;
+                String t_substring = T.subList(t_position, t_position + search_length).stream().collect(Collectors.joining());
+                hash_table.put(hash(t_substring), t_position);
+                t_position ++;
             }
         }
 
-        /**
-         * Starting at the first unmarked token of P for each unmarked Pp do if
-         * distance to next tile <= s then advance p to first unmarked token
-         * after next tile else create the KR hash-value for string Pp to
-         * Pp+s-1 check hashtable for hash of KR hash-value for each hash-table
-         * entry with equal hashed KR hash-value do if for all j from 0 to s-1,
-         * Pp+ j = Tt+ j then k: = s while Pp+k = Tt+k AND unmarked(Pp+k) AND
-         * unmarked(Tt+k) do k := k + 1 if k > 2 *s then return(k) else record
-         * new maximal-match_value
-         */
-        noNextTile = false;
-        int p = 0;
-        while (p < P.size()) {
-            if (isMarked(P.get(p))) {
-                p = p + 1;
+        no_next_tile = false;
+        Integer p_position = 0;
+
+        while (p_position < P.size()) {
+
+            if (isMarked(P.get(p_position))) {
+                p_position ++;
                 continue;
             }
 
-
-
-            Integer dist;
-            Optional<Integer> distance_to_next_tile = distanceToNextTile(p, P);
+            Optional<Integer> distance_to_next_tile = distanceToNextTile(p_position, P);
             if (distance_to_next_tile.isPresent())
-                dist = distance_to_next_tile.get();
-            else{
-                dist = 0;
-                dist = P.size() - p;
-                noNextTile = true;
+                distance = distance_to_next_tile.get();
+            else {
+                distance = P.size() - p_position;
+                no_next_tile = true;
             }
 
-            if (dist < s) {
-                if (noNextTile)
-                    p = P.size();
+            if (distance < search_length) {
+                if (no_next_tile)
+                    p_position = P.size();
                 else {
-
-                    if(jumpToNextUnmarkedTokenAfterTile(p, P).isPresent())
-                        p = jumpToNextUnmarkedTokenAfterTile(p, P).get();
-                    else{
-                        p = 0;
-                        p = P.size();
+                    if(jumpToNextUnmarkedTokenAfterTile(p_position, P).isPresent())
+                        p_position = jumpToNextUnmarkedTokenAfterTile(p_position, P).get();
+                    else {
+                        p_position = P.size();
                     }
                 }
             } else {
-                StringBuilder sb = new StringBuilder();
-                for (int i = p; i <= p + s-1; i++) {
-                    sb.append(P.get(i));
-                }
-                String substring = sb.toString();
-                h = hash(substring);
-                ArrayList<Integer> values = hashtable.get(h);
-                if (values != null) {
-                    for (Integer val : values) {
-                        StringBuilder newsb = new StringBuilder();
-                        for (int i = val; i <= val + s-1; i++) {
-                            newsb.append(T.get(i));
-                        }
-                        if (newsb.toString().equals(substring)) {
-                            t = val;
-                            int k = s;
 
-                            while (p + k < P.size() && t + k < T.size()
-                                    && P.get(p + k).equals(T.get(t + k))
-                                    && isUnmarked(P.get(p+k))
-                                    && isUnmarked(T.get(t+k)))
-                                k = k + 1;
+                String p_substring = P.subList(p_position, p_position + search_length).stream().collect(Collectors.joining());
+                
+                ArrayList<Integer> positions = hash_table.get(hash(p_substring));
 
-                            if (k > 2 * s)
-                                return k;
-                            else {
-                                if (longestMaxMatch < s)
-                                    longestMaxMatch = s;
-                                MatchValue mv = new MatchValue(p, t, k);
-                                queue.add(mv);
-                            }
+                for (Integer position : positions) {
+
+                    String t_substring = T.subList(position, position + search_length).stream().collect(Collectors.joining());
+
+                    if (t_substring.equals(p_substring)) {
+
+                        t_position = position;
+
+                        Integer k = search_length;
+
+                        while (p_position + k < P.size() && t_position + k < T.size()
+                                && P.get(p_position + k).equals(T.get(t_position + k))
+                                && isUnmarked(P.get(p_position + k))
+                                && isUnmarked(T.get(t_position + k)))
+                            k ++;
+
+                        if (k > 2 * search_length)
+                            return k;
+                        else {
+                            if (longest_max_match < search_length)
+                                longest_max_match = search_length;
+
+                            matches.add(new MatchValue(p_position, t_position, k));
                         }
                     }
                 }
-                p += 1;
+                p_position ++;
             }
-            //logger.info(matches.toString());
         }
-        if (!queue.isEmpty()){
-            all_matches.add(queue);
+        if (!matches.isEmpty()){
+            all_matches.add(matches);
         }
-        return longestMaxMatch;
+        return longest_max_match;
     }
 
     private void markStrings(List<String> p, List<String> t) {
@@ -214,10 +180,10 @@ public class RKRGSTAlgorithm implements IAlgorithm {
         all_matches.clear();
     }
 
-    private static int hash(String string) {
-        AtomicInteger hash = new AtomicInteger(0);
+    private static Long hash(String string) {
+        AtomicLong hash = new AtomicLong(0);
         string.chars().forEach(symbol -> hash.set((hash.intValue() << 1) + symbol));
-        return hash.intValue();
+        return hash.longValue();
     }
 
     private Boolean isUnmarked(String string) {
@@ -261,375 +227,6 @@ public class RKRGSTAlgorithm implements IAlgorithm {
         return position_after_next_tile;
     }
 
-
-//    private Integer scanPattern(Integer search_length, List<String> p, List<String> t) {
-//
-//        Integer longest_max_match = 0;
-//        Queue<MatchValue> matches = new LinkedList<>();
-//        GSTHashTable hash_table = new GSTHashTable();
-//
-//        Integer t_position = 0;
-//        Boolean no_next_tile = false;
-//        Integer hash;
-//
-//        while (t_position < t.size()) {
-//            if (isMarked(t.get(t_position))) {
-//                t_position ++;
-//                continue;
-//            }
-//
-//            Integer distance;
-//            Optional<Integer> distance_to_next_tile = distanceToNextTile(t_position, t);
-//            if (distance_to_next_tile.isPresent())
-//                distance = distance_to_next_tile.get();
-//            else {
-//                distance = t.size() - t_position;
-//                no_next_tile = true;
-//            }
-//
-//            if (distance < search_length) {
-//                if (no_next_tile)
-//                    t_position = t.size();
-//                else {
-//                    Optional<Integer> position_next_tile = jumpToNextUnmarkedTokenAfterTile(t_position, t);
-//                    if (position_next_tile.isPresent())
-//                        t_position = position_next_tile.get();
-//                    else
-//                        t_position = t.size();
-//                }
-//            } else {
-//                StringBuilder t_substring_builder = new StringBuilder();
-//                t.subList(t_position, t_position + search_length + 1).forEach(t_substring_builder::append);
-//                hash = hash(t_substring_builder.toString());
-//                hash_table.put(hash, t_position);
-//                t_position ++;
-//            }
-//        }
-//
-//        no_next_tile = false;
-//        int p_position = 0;
-//
-//        while (p_position < p.size()) {
-//            if (isMarked(p.get(p_position))) {
-//                p_position = p_position + 1;
-//                continue;
-//            }
-//
-//            Integer distance;
-//
-//            Optional<Integer> distance_to_next_tile = distanceToNextTile(t_position, t);
-//            if (distance_to_next_tile.isPresent()){
-//                distance = distance_to_next_tile.get();
-//            }
-//            else{
-//                distance = p.size() - p_position;
-//                no_next_tile = true;
-//            }
-//
-//            if (distance < search_length) {
-//                if (no_next_tile)
-//                    p_position = p.size();
-//                else {
-//                    Optional<Integer> position_next_tile = jumpToNextUnmarkedTokenAfterTile(p_position, p);
-//                    if (position_next_tile.isPresent())
-//                        p_position = position_next_tile.get();
-//                    else
-//                        p_position = p.size();
-//
-//                }
-//            } else {
-//                StringBuilder p_substring_builder = new StringBuilder();
-//                p.subList(p_position, p_position + search_length + 1).forEach(p_substring_builder::append);
-//                hash = hash(p_substring_builder.toString());
-//
-//                ArrayList<Integer> values = hash_table.get(hash);
-//
-//                for (Integer val : values) {
-//                    StringBuilder newsb = new StringBuilder();
-//                    for (int i = val; i <= val + search_length -1; i++) {
-//                        newsb.append(t.get(i));
-//                    }
-//                    if (newsb.toString().equals(p_substring_builder.toString())) {
-//                        t_position = val;
-//                        int k = search_length;
-//
-//                        while (p_position + k < p.size() && t_position + k < t.size()
-//                                && p.get(p_position + k).equals(t.get(t_position + k))
-//                                && isUnmarked(p.get(p_position + k))
-//                                && isUnmarked(t.get(t_position + k)))
-//                            k = k + 1;
-//
-//                        if (k > 2 * search_length)
-//                            return k;
-//                        else {
-//                            if (longest_max_match < search_length)
-//                                longest_max_match = search_length;
-//
-//                            matches.add(new MatchValue(p_position, t_position, k));
-//                        }
-//                    }
-//                }
-//
-//                p_position += 1;
-//            }
-//            //logger.info(matches.toString());
-//        }
-//        if (!matches.isEmpty()){
-//            all_match.add(matches);
-//        }
-//        return longest_max_match;
-//
-////        Integer longest_max_match = 0;
-////
-////        GSTHashTable hash_table = new GSTHashTable();
-////        Queue<MatchVals> match_value = new LinkedList<>();
-////
-////        Integer t_position = 0;
-////        Boolean no_next_tile = false;
-////        Integer hash;
-////
-////        while (t_position < t.size()) {
-////
-////            if (isMarked(t.get(t_position))) {
-////                t_position ++;
-////                continue;
-////            }
-////
-////            Integer distance;
-////
-////            Integer distance_to_next_tile = distanceToNextTile(t_position, t);
-////
-////            if (distance_to_next_tile > 0) {
-////                distance = distance_to_next_tile;
-////            } else {
-////                distance = t.size() - t_position;
-////                no_next_tile = true;
-////            }
-////
-////            if (distance < search_length) {
-////                if (no_next_tile) {
-////                    t_position = t.size();
-////                } else {
-////                    Integer distance_to_next_unmarked_token_after_tile = jumpToNextUnmarkedTokenAfterTile(t_position, t);
-////                    if (distance_to_next_unmarked_token_after_tile > 0) {
-////                        t_position = distance_to_next_unmarked_token_after_tile;
-////                    } else {
-////                        t_position = t.size();
-////                    }
-////                }
-////            } else {
-////                StringBuilder t_substring_builder = new StringBuilder();
-////                for (int i = t_position; i <= t_position + search_length-1; i++)
-////                    t_substring_builder.append(t.get(i));
-////               // t.subList(t_position, t_position + search_length - 1).stream().forEach(t_substring_builder::append);
-////                String t_substring = t_substring_builder.toString();
-////                logger.info(t_substring + " ============");
-////                hash = hash(t_substring);
-////                hash_table.put((long) hash, t_position);
-////                t_position ++;
-////            }
-////        }
-////
-////        no_next_tile = false;
-////        Integer p_position = 0;
-////        while (p_position < p.size()) {
-////
-////            if (isMarked(p.get(p_position))) {
-////                p_position ++;
-////                continue;
-////            }
-////
-////            Integer distance;
-////
-////            Integer distance_to_next_tile = distanceToNextTile(p_position, p);
-////            if (distance_to_next_tile > 0) {
-////                distance = distance_to_next_tile;
-////            } else {
-////                distance = p.size() - p_position;
-////                no_next_tile = true;
-////            }
-////
-////            if (distance < search_length) {
-////                if (no_next_tile) {
-////                    p_position = p.size();
-////                } else {
-////                    Integer distance_to_next_unmarked_token_after_tile = jumpToNextUnmarkedTokenAfterTile(p_position, p);
-////                    if (distance_to_next_unmarked_token_after_tile > 0) {
-////                        p_position = distance_to_next_unmarked_token_after_tile;
-////                    } else {
-////                        p_position = p.size();
-////                    }
-////                }
-////            } else {
-////                StringBuilder p_substring_builder = new StringBuilder();
-////                for (int i = p_position; i <= p_position + search_length-1; i++)
-////                    p_substring_builder.append(t.get(i));
-////                //p.subList(p_position, p_position + search_length - 1).stream().forEach(p_substring_builder::append);
-////                String p_substring = p_substring_builder.toString();
-////                hash = hash(p_substring);
-////
-////                ArrayList<Integer> match_positions = hash_table.get((long) hash);
-////
-////                for (Integer match_position : match_positions) {
-////                    StringBuilder t_substring_builder = new StringBuilder();
-////                    for (int i = match_position; i <= match_position + search_length-1; i++)
-////                        t_substring_builder.append(t.get(i));
-////                    //t.subList(match_position, match_position + search_length - 1).stream().forEach(t_substring_builder::append);
-////                    String t_substring = t_substring_builder.toString();
-////
-////                    if (t_substring.equals(p_substring)) {
-////                        t_position = match_position;
-////                        Integer k = search_length;
-////
-////                        while (p_position + k < p.size() && t_position + k < t.size()
-////                                && p.get(p_position + k).equals(t.get(t_position + k))
-////                                && isUnmarked(p.get(p_position + k))
-////                                && isUnmarked(t.get(t_position + k)))
-////                            k = k + 1;
-////
-////                        if (k > 2 * search_length) {
-////                            return k;
-////                        } else {
-////                            longest_max_match = Integer.max(longest_max_match, search_length);
-////                            match_value.put(new MatchVals(p_position, t_position, k));
-////                        }
-////                    }
-////                }
-////                p_position ++;
-////            }
-////        }
-////
-////        if (!match_value.isEmpty())
-////            all_matches.put(match_value);
-////
-////        return longest_max_match;
-//    }
-//
-//    private void markStrings(List<String> p, List<String> t) {
-//        for(Queue<MatchValue> matches: all_match){
-//            while (!matches.isEmpty()) {
-//                MatchValue match_value = matches.poll();
-//                if (!isOccluded(match_value, tiles)) {
-//                    for (int j = 0; j < match_value.getLengthMatch(); j++) {
-//                        p.set(match_value.getPatternPosition() + j, markToken(p.get(match_value.getPatternPosition() + j)));
-//                        t.set(match_value.getTextPosition() + j, markToken(t.get(match_value.getTextPosition() + j)));
-//                    }
-//                    tiles.add(match_value);
-//                }
-//            }
-//        }
-//        all_match = new ArrayList<Queue<MatchValue>>();
-//    }
-//
-//    /**
-//     * Creates a Karp-Rabin Hash Value for the given string and returns it.
-//     *
-//     * Based on: http://www-igm.univ-mlv.fr/~lecroq/string/node5.html
-//     *
-//     * @param string
-//     * @return hash value for any given string
-//     */
-//
-//    private static int hash(String string) {
-//        int hashValue = 0;
-//        for (int i = 0; i < string.length(); i++)
-//            hashValue = ((hashValue << 1) + (int) string.charAt(i));
-//        logger.info(string + " ============" + hashValue);
-//        return hashValue;
-//    }
-//
-//    /**
-//     * If string search_length is unmarked returns True otherwise False.
-//     *
-//     * @param string
-//     * @return true or false (i.e., whether marked or unmarked)
-//     */
-//    private boolean isUnmarked(String string) {
-//        if (string.length() > 0 && string.charAt(0) != '*')
-//            return true;
-//        else
-//            return false;
-//    }
-//
-//    private boolean isMarked(String string) {
-//        return (!isUnmarked(string));
-//    }
-//
-//    private String markToken(String string) {
-//        return "*" + string;
-//    }
-//
-//
-//    private boolean isOccluded(MatchValue match_value, ArrayList<MatchValue> tiles) {
-//        return tiles.stream().anyMatch(tile -> (tile.getPatternPosition() + tile.getLengthMatch() == match_value.getPatternPosition() + match_value.getLengthMatch()) &&
-//                                               (tile.getTextPosition() + tile.getLengthMatch() == match_value.getTextPosition() + match_value.getLengthMatch()));
-//    }
-//
-//    private Optional<Integer> distanceToNextTile(Integer current_position, List<String> list) {
-//
-//        if (current_position == list.size())
-//            return Optional.empty();
-//
-//        Integer distance = 0;
-//
-//        while (current_position + distance + 1 < list.size() && isUnmarked(list.get(current_position + distance + 1)))
-//            distance ++;
-//
-//        if (current_position + distance + 1 == list.size())
-//            return Optional.empty();
-//
-//        return Optional.of(distance +1);
-//
-////        Integer distance = (int) StreamUtils.takeWhile(list.stream().skip(current_position + 1), this::isUnmarked).count();
-////        return current_position + distance + 1 != list.size() ? Optional.of(distance) : Optional.empty();
-//    }
-//
-//    private Optional<Integer> jumpToNextUnmarkedTokenAfterTile(Integer position, List<String> list) {
-//
-//        Optional<Integer> distance_to_next_tile = distanceToNextTile(position, list);
-//
-//        if (distance_to_next_tile.isPresent()) {
-//            position += distance_to_next_tile.get();
-//        } else {
-//            return Optional.empty();
-//        }
-//
-//        while (position + 1 < list.size() && isMarked(list.get(position + 1)))
-//            position ++;
-//
-//        if (position + 1 > list.size() - 1)
-//            return Optional.empty();
-//
-//        return Optional.of(position + 1);
-//
-//
-////        Optional<Integer> distance_to_next_tile = distanceToNextTile(position, list);
-////
-////        if (distance_to_next_tile.isPresent()) {
-////            position += distance_to_next_tile.get();
-////        } else {
-////            return Optional.empty();
-////        }
-////
-////        while (position + 1 < list.size() && isMarked(list.get(position + 1)))
-////            position ++;
-////
-////        if (position + 1 > list.size() - 1) {
-////            return Optional.empty();
-////        } else {
-////            return Optional.of(position + 1);
-////        }
-//    }
-//
-//    private Integer hash(String string) {
-//        AtomicInteger hash = new AtomicInteger(0);
-//        string.chars().forEach(symbol -> hash.set((hash.intValue() << 1) + symbol));
-//        return hash.intValue();
-//    }
-//
-////    private Boolean isOccluded(MatchVals match_value, List<MatchVals> tiles) {
-
-////
     private Float similarity(List<String> p, List<String> t, List<MatchValue> tiles) {
         return (float) (2 * coverage(tiles)) / (float) (p.size() + t.size());
     }

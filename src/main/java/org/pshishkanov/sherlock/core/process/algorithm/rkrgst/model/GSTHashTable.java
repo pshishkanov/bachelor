@@ -10,7 +10,7 @@ public class GSTHashTable {
 
     private HashMap<Long, ArrayList<Integer>> matches = new HashMap<>();
 
-    public void put(long hash, int position){
+    public void put(Long hash, Integer position){
         ArrayList<Integer> list;
         if (matches.containsKey(hash)){
             list = matches.get(hash);
@@ -21,10 +21,10 @@ public class GSTHashTable {
         matches.put(hash, list);
     }
 
-    public ArrayList<Integer> get(long key){
+    public ArrayList<Integer> get(Long key){
         if(matches.containsKey(key))
             return matches.get(key);
         else
-            return null;
+            return new ArrayList<>();
     }
 }
