@@ -37,7 +37,7 @@
  *     one is, however, extremely close to the spec.
  *
  */
-grammar Java8;
+grammar Java;
 
 /*
  * Productions from §3 (Lexical Structure)

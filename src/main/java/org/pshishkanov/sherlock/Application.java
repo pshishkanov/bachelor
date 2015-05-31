@@ -1,12 +1,13 @@
 package org.pshishkanov.sherlock;
 
-import org.pshishkanov.sherlock.security.model.Role;
-import org.pshishkanov.sherlock.security.model.Account;
-import org.pshishkanov.sherlock.security.repository.AccountRepository;
+import org.pshishkanov.sherlock.web.security.model.Role;
+import org.pshishkanov.sherlock.web.security.model.Account;
+import org.pshishkanov.sherlock.web.security.repository.AccountRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 /**
