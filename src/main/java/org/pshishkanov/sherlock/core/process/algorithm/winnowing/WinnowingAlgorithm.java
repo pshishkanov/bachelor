@@ -18,6 +18,6 @@ public class WinnowingAlgorithm implements IAlgorithm {
     @Override
     public Float process(List<String> p, List<String> t) {
         /* TODO Реализовать алгоритм */
-        return new Random().nextFloat();
+        return 0f;
     }
 }
