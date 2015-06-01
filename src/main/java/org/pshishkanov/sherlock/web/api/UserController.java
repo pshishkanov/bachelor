@@ -2,7 +2,7 @@ package org.pshishkanov.sherlock.web.api;
 
 import org.pshishkanov.sherlock.web.response.ApiResponse;
 import org.pshishkanov.sherlock.web.security.model.Account;
-import org.pshishkanov.sherlock.web.security.model.AccountValidator;
+import org.pshishkanov.sherlock.web.validator.AccountValidator;
 import org.pshishkanov.sherlock.web.security.service.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.WebDataBinder;

@@ -1,7 +1,7 @@
 package org.pshishkanov.sherlock.web.api;
 
 import org.pshishkanov.sherlock.core.model.SourceCode;
-import org.pshishkanov.sherlock.core.model.SourceCodeValidator;
+import org.pshishkanov.sherlock.web.validator.SourceCodeValidator;
 import org.pshishkanov.sherlock.core.process.SimilarityService;
 import org.pshishkanov.sherlock.core.repository.SourceCodeRepository;
 import org.pshishkanov.sherlock.web.response.ApiResponse;

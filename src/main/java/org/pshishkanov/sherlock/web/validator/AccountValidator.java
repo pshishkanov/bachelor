@@ -1,5 +1,6 @@
-package org.pshishkanov.sherlock.web.security.model;
+package org.pshishkanov.sherlock.web.validator;
 
+import org.pshishkanov.sherlock.web.security.model.Account;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
 import org.springframework.validation.Validator;
